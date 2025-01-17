@@ -9,19 +9,35 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from config.db import SessionLocal
 from strawberry.fastapi import GraphQLRouter
+import os
+from dotenv import load_dotenv
+import py_eureka_client.eureka_client as eureka_client
+
+load_dotenv()
 
 
 app = FastAPI()
 
 # Serve files from the uploads/category_image directory
+
+EUREKA_SERVER = os.getenv("EUREKA_SERVER")
+
+eureka_client.init(
+    eureka_server=EUREKA_SERVER,
+    app_name="product-service",
+    instance_host="localhost",
+    instance_port=8002
+)
+
 app.mount("/uploads", StaticFiles(directory="/home/sekoph/projects/online_bidding_fastapi-v2/uploads"), name="uploads")
 
 
+
 origins = [
-    'http://localhost:8001',
-    'http://localhost:8003',
-    'http://localhost:3000',
-    'http://localhost:5173',
+    'http://localhost:8000',
+    # 'http://localhost:8003',
+    # 'http://localhost:3000',
+    # 'http://localhost:5173',
 ]
 app.add_middleware(
     CORSMiddleware,

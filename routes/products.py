@@ -11,6 +11,7 @@ import aiofiles
 
 from crud.products import Create_Product, Get_Products,update_product_status,get_Product_By_Id, get_close_products
 from schemas.products import CreateProduct, Product,UpdateProductStatus
+from services.requests import fetch_data
 
 
 
@@ -34,6 +35,12 @@ UploadDirectory = Path("/home/sekoph/projects/online_bidding_fastapi-v2/uploads/
 # Create the directory if it doesn't exist
 UploadDirectory.mkdir(exist_ok=True)
 
+
+# @productsRouter.get("/api/home")  # Root path
+# def home():
+#     return {"message": "Products Service Running"}
+
+
 #get all products
 @productsRouter.get('/api/products', response_model = list[Product])
 async def get_products(limit: int = 100, skip: int = 0 , db: Session = Depends(get_db)):
@@ -53,14 +60,13 @@ async def create_product(token: str, product_name: str, description: str, locati
     'Content-Type': 'application/json'
     }
     
-    response = requests.get(f'http://localhost:8001/api/user/me', headers=headers)
-    owner = response.json()
     
-    print(owner)
+    owner = await fetch_data(f'api/user/me',service_name="user-service", method='get', headers=headers)
     
     new_product = CreateProduct(product_name = product_name, description = description, location = location, is_closed = False, file_name = file_name, disposal_price = disposal_price, owner_id = owner['id'])
 
     return Create_Product(db = db, product = new_product, product_category_id = product_category_id)
+
 
 async def upload_image(file: UploadFile = File(...)):
     file_name = UploadDirectory / file.filename
@@ -78,15 +84,15 @@ async def get_product_by_id(product_id: int, db:Session = Depends(get_db)):
 
 
 
-@productsRouter.put("/api/products/open/{product_id}", response_model=Product)
-async def update_product_status_route(product_id: int, db: Session = Depends(get_db)):
-    update = UpdateProductStatus(is_closed=False)
+@productsRouter.put("/api/products/update_status/{product_id}", response_model=Product)
+async def update_product_status_route(product_id: int, is_closed: bool, db: Session = Depends(get_db)):
+    update = UpdateProductStatus(is_closed)
     return update_product_status(db, product_id, update)
 
-@productsRouter.put("/api/products/close/{product_id}", response_model=Product)
-async def update_product_status_route(product_id: int, db: Session = Depends(get_db)):
-    update = UpdateProductStatus(is_closed=True)
-    return update_product_status(db, product_id, update)
+# @productsRouter.put("/api/products/close/{product_id}", response_model=Product)
+# async def update_product_status_route(product_id: int, db: Session = Depends(get_db)):
+#     update = UpdateProductStatus(is_closed=True)
+#     return update_product_status(db, product_id, update)
 
 
 
